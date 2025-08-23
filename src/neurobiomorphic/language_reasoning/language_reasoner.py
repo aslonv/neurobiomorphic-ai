@@ -56,10 +56,8 @@ class WorkingMemoryModule(nn.Module):
         self.num_heads = num_heads
         self.controller_dim = controller_dim
         
-        # Memory matrix
         self.memory = nn.Parameter(torch.randn(memory_size, memory_dim) * 0.1)
         
-        # Attention mechanism for memory access
         self.memory_attention = nn.MultiheadAttention(
             embed_dim=memory_dim,
             num_heads=num_heads,
@@ -67,12 +65,10 @@ class WorkingMemoryModule(nn.Module):
             batch_first=True
         )
         
-        # Controller networks
         self.read_controller = nn.Linear(controller_dim, memory_dim)
         self.write_controller = nn.Linear(controller_dim, memory_dim)
         self.erase_controller = nn.Linear(controller_dim, memory_dim)
         
-        # Memory update gates
         self.update_gate = nn.Linear(controller_dim + memory_dim, 1)
         self.forget_gate = nn.Linear(controller_dim + memory_dim, 1)
         
@@ -94,21 +90,17 @@ class WorkingMemoryModule(nn.Module):
         batch_size = controller_state.shape[0]
         device = controller_state.device
         
-        # Expand memory for batch processing
         memory_batch = self.memory.unsqueeze(0).expand(batch_size, -1, -1)
         
-        # Generate read/write vectors from controller
-        read_key = self.read_controller(controller_state).unsqueeze(1)  # [batch, 1, memory_dim]
+        read_key = self.read_controller(controller_state).unsqueeze(1)
         
-        # Memory read via attention
         read_data, read_weights = self.memory_attention(
             query=read_key,
             key=memory_batch,
             value=memory_batch
         )
-        read_data = read_data.squeeze(1)  # [batch, memory_dim]
+        read_data = read_data.squeeze(1)
         
-        # Memory write (if write_data provided)
         if write_data is not None:
             write_key = self.write_controller(controller_state).unsqueeze(1)
             erase_vector = torch.sigmoid(self.erase_controller(controller_state)).unsqueeze(1)

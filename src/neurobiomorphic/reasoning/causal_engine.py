@@ -267,12 +267,10 @@ class CausalReasoningEngine(nn.Module):
         batch_size = observations.shape[0]
         device = observations.device
         
-        # Get causal ordering (topological sort)
         causal_graph = self.get_causal_graph()
         try:
             causal_order = list(nx.topological_sort(causal_graph.to_networkx()))
         except nx.NetworkXError:
-            # If graph has cycles, use random order (should be avoided)
             logger.warning("Detected cycles in causal graph, using variable order")
             causal_order = self.variable_names
         
@@ -282,29 +280,24 @@ class CausalReasoningEngine(nn.Module):
         for var_name in causal_order:
             var_idx = self.variable_names.index(var_name)
             
-            # Check if this variable is intervened
             if interventions and var_name in interventions:
                 generated_values[:, var_idx] = interventions[var_name]
                 mechanism_outputs[var_name] = interventions[var_name]
                 continue
             
-            # Get parents of this variable
             parents = causal_graph.parents(var_name)
             
             if parents:
                 parent_indices = [self.variable_names.index(p) for p in parents]
                 parent_values = generated_values[:, parent_indices]
             else:
-                # If no parents, use empty tensor
                 parent_values = torch.zeros(batch_size, 0, device=device)
             
-            # Generate value using causal mechanism
             if var_name in self.mechanisms:
                 output = self.mechanisms[var_name](parent_values)
                 generated_values[:, var_idx] = output.squeeze(-1) if output.dim() > 1 else output
                 mechanism_outputs[var_name] = output
             else:
-                # If no mechanism defined, copy from observations
                 generated_values[:, var_idx] = observations[:, var_idx]
                 mechanism_outputs[var_name] = observations[:, var_idx]
         
@@ -319,15 +312,13 @@ class CausalReasoningEngine(nn.Module):
         """
         Perform counterfactual inference using the three-step procedure:
         1. Abduction: Infer noise values given observations
-        2. Action: Apply interventions
+        2. Action: Apply interventions  
         3. Prediction: Generate counterfactual outcomes
         """
-        # Step 1: Abduction - infer noise values
         with torch.no_grad():
             original_outputs, _ = self.forward(observations)
             noise_values = observations - original_outputs
         
-        # Step 2 & 3: Action and Prediction
         counterfactual_samples = []
         for _ in range(n_samples):
             cf_values, _ = self.forward(observations, interventions)
@@ -339,14 +330,11 @@ class CausalReasoningEngine(nn.Module):
         """Compute loss for causal discovery using NOTEARS-style optimization."""
         adj = torch.sigmoid(self.adj_matrix)
         
-        # Reconstruction loss
         generated, _ = self.forward(observations)
         reconstruction_loss = F.mse_loss(generated, observations)
         
-        # Acyclicity constraint (DAG constraint)
-        # h(W) = tr(exp(W ⊙ W)) - d = 0 for DAG
         dag_loss = torch.trace(torch.matrix_exp(adj * adj)) - self.num_variables
-        dag_loss = torch.abs(dag_loss)  # We want this to be zero
+        dag_loss = torch.abs(dag_loss)
         
         # Sparsity regularization
         sparsity_loss = torch.sum(adj)

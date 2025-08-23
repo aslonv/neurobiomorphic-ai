@@ -97,12 +97,10 @@ class AdvancedNeuroplasticityLayer(nn.Module):
             self.optimal_weights = nn.Parameter(torch.zeros(output_size, input_size), requires_grad=False)
             self.ewc_lambda = nn.Parameter(torch.tensor(1000.0))
             
-        # Neuromodulator effects
         self.dopamine_level = nn.Parameter(torch.tensor(0.5))
         self.acetylcholine_level = nn.Parameter(torch.tensor(0.5))
         self.noradrenaline_level = nn.Parameter(torch.tensor(0.5))
         
-        # Learning rate adaptation
         self.adaptive_lr = nn.Parameter(torch.ones(output_size, input_size) * 0.01)
         self.lr_adaptation_rate = nn.Parameter(torch.tensor(0.001))
         
@@ -110,7 +108,6 @@ class AdvancedNeuroplasticityLayer(nn.Module):
         """Initialize sparse connectivity patterns."""
         weights = torch.randn(out_size, in_size) / math.sqrt(in_size)
         
-        # Create sparse mask
         mask = torch.rand(out_size, in_size) > sparsity
         weights = weights * mask.float()
         
@@ -131,31 +128,22 @@ class AdvancedNeuroplasticityLayer(nn.Module):
         batch_size = x.shape[0]
         device = x.device
         
-        # Apply structural plasticity (dynamic connectivity)
         effective_weights = self.weight
         if self.enable_structural_plasticity:
             effective_weights = self._apply_structural_plasticity(effective_weights)
             
-        # Astrocyte modulation based on context
         astro_modulation = self._compute_astrocyte_modulation(context)
         
-        # Multi-compartment dendritic computation
         dendritic_output = self._dendritic_computation(x)
         
-        # Synaptic transmission with astrocyte modulation
-        # astro_modulation is [batch_size, output_size], effective_weights is [output_size, input_size]
-        # Apply mean astrocyte modulation across batch for weight modulation
-        mean_astro_mod = astro_modulation.mean(dim=0)  # [output_size]
-        modulated_weights = effective_weights * mean_astro_mod.unsqueeze(-1)  # [output_size, input_size]
+        mean_astro_mod = astro_modulation.mean(dim=0)
+        modulated_weights = effective_weights * mean_astro_mod.unsqueeze(-1)
         synaptic_output = F.linear(x, modulated_weights, self.bias)
         
-        # Combine somatic and dendritic contributions
         combined_output = synaptic_output + dendritic_output
         
-        # Apply activation function
         output = F.relu(combined_output)
         
-        # Update plasticity mechanisms during training
         if self.training:
             self._update_plasticity_mechanisms(x, output, prev_activation, context)
             
@@ -166,18 +154,14 @@ class AdvancedNeuroplasticityLayer(nn.Module):
         if context.dim() == 1:
             context = context.unsqueeze(0)
             
-        # Simple context integration (can be made more sophisticated)
-        context_signal = context.mean(dim=-1, keepdim=True)  # [batch_size, 1]
+        context_signal = context.mean(dim=-1, keepdim=True)
         
-        # Expand to match output dimensions
         batch_size = context_signal.shape[0]
-        context_expanded = context_signal.expand(batch_size, self.output_size)  # [batch_size, output_size]
+        context_expanded = context_signal.expand(batch_size, self.output_size)
         
-        # Astrocyte activation based on context and current state
-        activation_input = context_expanded * self.astrocyte_activation.unsqueeze(0)  # Broadcasting
+        activation_input = context_expanded * self.astrocyte_activation.unsqueeze(0)
         astro_mod = torch.sigmoid(activation_input)
         
-        # Apply threshold for astrocyte activation
         threshold_mask = (astro_mod > self.astrocyte_threshold.unsqueeze(0)).float()
         astro_mod = astro_mod * threshold_mask
         
@@ -185,18 +169,11 @@ class AdvancedNeuroplasticityLayer(nn.Module):
     
     def _dendritic_computation(self, x: torch.Tensor) -> torch.Tensor:
         """Multi-compartment dendritic processing."""
-        # Compute dendritic segment activations
-        # x: [batch_size, input_size]
-        # dendrite_segments: [output_size, input_size, n_segments]
+        x_expanded = x.unsqueeze(1).unsqueeze(-1)
+        segments_expanded = self.dendrite_segments.unsqueeze(0)
         
-        # Expand input for segment computation
-        x_expanded = x.unsqueeze(1).unsqueeze(-1)  # [batch_size, 1, input_size, 1]
-        segments_expanded = self.dendrite_segments.unsqueeze(0)  # [1, output_size, input_size, n_segments]
+        segment_activations = torch.sum(x_expanded * segments_expanded, dim=2)
         
-        # Compute segment activations (element-wise multiplication)
-        segment_activations = torch.sum(x_expanded * segments_expanded, dim=2)  # [batch_size, output_size, n_segments]
-        
-        # Apply nonlinearity to each segment
         segment_outputs = F.relu(segment_activations)
         
         # Gate-controlled integration of dendritic segments
