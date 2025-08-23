@@ -40,10 +40,10 @@ class SymbolicOperation(Enum):
 @dataclass
 class SymbolicExpression:
     """Represents a symbolic expression with neural embeddings."""
-    expression: str  # Symbolic expression as string
-    variables: List[str]  # List of variable names
-    operation: SymbolicOperation  # Primary operation type
-    embedding: Optional[torch.Tensor] = None  # Neural embedding
+    expression: str
+    variables: List[str]
+    operation: SymbolicOperation
+    embedding: Optional[torch.Tensor] = None
     
     def to_sympy(self) -> sp.Expr:
         """Convert to SymPy expression."""
@@ -75,10 +75,8 @@ class NeuralSymbolicEncoder(nn.Module):
         self.embedding_dim = embedding_dim
         self.hidden_dim = hidden_dim
         
-        # Token embedding for symbolic tokens
         self.token_embedding = nn.Embedding(vocab_size, embedding_dim)
         
-        # Transformer encoder for sequence modeling
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=embedding_dim,
             nhead=8,
@@ -88,7 +86,6 @@ class NeuralSymbolicEncoder(nn.Module):
         )
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers)
         
-        # Output projection
         self.output_proj = nn.Linear(embedding_dim, hidden_dim)
         
     def forward(self, token_ids: torch.Tensor, attention_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
@@ -102,31 +99,26 @@ class NeuralSymbolicEncoder(nn.Module):
         Returns:
             [batch_size, hidden_dim] Expression embeddings
         """
-        # Token embeddings
-        embeddings = self.token_embedding(token_ids)  # [batch, seq_len, embed_dim]
+        embeddings = self.token_embedding(token_ids)
         
-        # Add positional encoding
         seq_len = embeddings.size(1)
         position_ids = torch.arange(seq_len, device=embeddings.device).unsqueeze(0)
         position_embeddings = self.token_embedding(position_ids % self.token_embedding.num_embeddings)
         embeddings = embeddings + position_embeddings
         
-        # Transformer encoding
-        embeddings = embeddings.transpose(0, 1)  # [seq_len, batch, embed_dim]
+        embeddings = embeddings.transpose(0, 1)
         
         if attention_mask is not None:
-            # Convert attention mask to transformer format
             attention_mask = attention_mask.bool()
-            attention_mask = ~attention_mask  # Invert for transformer
+            attention_mask = ~attention_mask
         
         encoded = self.transformer(embeddings, src_key_padding_mask=attention_mask)
         
-        # Pool to get single representation (mean pooling)
         if attention_mask is not None:
             mask_expanded = (~attention_mask).unsqueeze(-1).float()
             encoded = (encoded.transpose(0, 1) * mask_expanded).sum(1) / mask_expanded.sum(1)
         else:
-            encoded = encoded.transpose(0, 1).mean(1)  # [batch, embed_dim]
+            encoded = encoded.transpose(0, 1).mean(1)
         
         return self.output_proj(encoded)
 
@@ -146,13 +138,10 @@ class NeuralSymbolicDecoder(nn.Module):
         self.vocab_size = vocab_size
         self.max_length = max_length
         
-        # Input projection
         self.input_proj = nn.Linear(hidden_dim, embedding_dim)
         
-        # Token embedding
         self.token_embedding = nn.Embedding(vocab_size, embedding_dim)
         
-        # Transformer decoder
         decoder_layer = nn.TransformerDecoderLayer(
             d_model=embedding_dim,
             nhead=8,
@@ -162,7 +151,6 @@ class NeuralSymbolicDecoder(nn.Module):
         )
         self.transformer = nn.TransformerDecoder(decoder_layer, num_layers=3)
         
-        # Output head
         self.output_head = nn.Linear(embedding_dim, vocab_size)
         
     def forward(
@@ -183,22 +171,18 @@ class NeuralSymbolicDecoder(nn.Module):
         batch_size = encoded_expr.size(0)
         device = encoded_expr.device
         
-        # Project encoded expression to embedding space
-        memory = self.input_proj(encoded_expr).unsqueeze(0)  # [1, batch, embed_dim]
+        memory = self.input_proj(encoded_expr).unsqueeze(0)
         
         if target_tokens is not None:
-            # Teacher forcing during training
             seq_len = target_tokens.size(1)
-            tgt_embeddings = self.token_embedding(target_tokens)  # [batch, seq_len, embed_dim]
-            tgt_embeddings = tgt_embeddings.transpose(0, 1)  # [seq_len, batch, embed_dim]
+            tgt_embeddings = self.token_embedding(target_tokens)
+            tgt_embeddings = tgt_embeddings.transpose(0, 1)
             
-            # Create causal mask
             tgt_mask = self._generate_square_subsequent_mask(seq_len, device)
             
             decoded = self.transformer(tgt_embeddings, memory, tgt_mask=tgt_mask)
-            output = self.output_head(decoded.transpose(0, 1))  # [batch, seq_len, vocab_size]
+            output = self.output_head(decoded.transpose(0, 1))
         else:
-            # Autoregressive generation during inference
             output_tokens = []
             hidden_state = memory
             

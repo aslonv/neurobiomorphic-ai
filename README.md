@@ -92,12 +92,9 @@ pip install -e ".[dev,profiling,visualization,optimization]"
 
 ```python
 import torch
-from neurobiomorphic import (
-    AdvancedLanguageReasoner,
-    CausalReasoningEngine,
-    MetaReasoningSystem,
-    UncertaintyQuantificationBase
-)
+from neurobiomorphic.language_reasoning import AdvancedLanguageReasoner
+from neurobiomorphic.reasoning import CausalReasoningEngine, UncertaintyQuantificationBase
+from neurobiomorphic.neural_plasticity import AdvancedNeuroplasticNetwork
 
 # Initialize the reasoning system
 reasoner = AdvancedLanguageReasoner(
