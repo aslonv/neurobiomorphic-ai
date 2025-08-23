@@ -1,11 +1,13 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from .low_level_policy import LowLevelPolicy
+from .high_level_policy import HighLevelPolicy
 
 class HierarchicalAgent:
     def __init__(self, state_dim, action_dim, goal_dim, hidden_dim=256, lr=3e-4):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.low_level_policy = LowLevelPolicy(state_dim, action_dim, hidden_dim).to(self.device)
+        self.low_level_policy = LowLevelPolicy(state_dim, action_dim, goal_dim).to(self.device)  # Use goal_dim not hidden_dim
         self.high_level_policy = HighLevelPolicy(state_dim, goal_dim, hidden_dim).to(self.device)
         self.low_level_optimizer = optim.Adam(self.low_level_policy.parameters(), lr=lr)
         self.high_level_optimizer = optim.Adam(self.high_level_policy.parameters(), lr=lr)

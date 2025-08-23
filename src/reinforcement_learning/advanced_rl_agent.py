@@ -4,6 +4,7 @@ import torch.optim as optim
 import numpy as np
 from collections import deque
 import random
+from .actor_critic import ActorCritic
 
 class AdvancedRLAgent:
     def __init__(self, state_dim, action_dim, hidden_dim=256, lr=3e-4, gamma=0.99, entropy_coef=0.01):

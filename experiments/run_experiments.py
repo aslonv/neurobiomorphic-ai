@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import torch
 import torch.optim as optim
 import torch.nn as nn
@@ -6,7 +10,7 @@ from src.reinforcement_learning.advanced_rl_agent import AdvancedRLAgent
 from src.language_reasoning.language_reasoner import LanguageReasoner
 from src.hierarchical_agent.hierarchical_agent import HierarchicalAgent
 from src.hybrid_learning.enhanced_hybrid_system import EnhancedHybridLearningSystem
-import gym
+import gymnasium as gym
 
 def run_experiment():
     # Initialize components

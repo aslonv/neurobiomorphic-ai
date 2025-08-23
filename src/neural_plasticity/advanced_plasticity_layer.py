@@ -17,22 +17,26 @@ class AdvancedNeuroplasticityLayer(nn.Module):
         self.protein_synthesis_threshold = 0.5
 
     def forward(self, x, context, prev_activation):
-        # Astrocyte modulation
-        astro_mod = torch.sigmoid(self.astrocyte_activation * context)
+        # Simple astrocyte modulation using context as a scaling factor
+        context_scale = torch.sigmoid(context.mean())  # Single scalar from context
+        astro_mod = torch.sigmoid(self.astrocyte_activation * context_scale)
         
-        # Dendritic computation
-        dendritic_out = F.relu(torch.einsum('bi,oij->boj', x, self.dendrite_segments))
-        dendritic_out = dendritic_out.sum(dim=2)
+        # Dendritic computation - simplified to avoid shape issues
+        dendritic_out = F.relu(torch.mm(x, self.dendrite_segments.mean(dim=2).T))
         
         # Synaptic transmission with astrocyte modulation
-        out = F.linear(x, self.weight * astro_mod.unsqueeze(1), self.bias)
+        modulated_weight = self.weight * astro_mod.unsqueeze(1)
+        out = F.linear(x, modulated_weight, self.bias)
         
-        # Spike-timing-dependent plasticity (STDP)
-        pre_post = torch.bmm(x.unsqueeze(2), out.unsqueeze(1))
-        stdp = (pre_post - pre_post.transpose(1, 2)) * 0.01
-        
-        # Synaptic tagging and capture
-        self.synaptic_tag.data = self.synaptic_tag * self.tag_decay + stdp.mean(dim=0)
+        # Simplified STDP - ensure correct dimensions
+        if x.size(0) > 0 and out.size(0) > 0:
+            # Create STDP matrix with same shape as synaptic_tag (output_size, input_size)
+            x_avg = x.mean(dim=0)  # (input_size,)
+            out_avg = out.mean(dim=0)  # (output_size,)
+            stdp = torch.outer(out_avg, x_avg) * 0.01  # (output_size, input_size)
+            
+            # Synaptic tagging and capture
+            self.synaptic_tag.data = self.synaptic_tag * self.tag_decay + stdp
         protein_synthesis = (self.protein_synthesis > self.protein_synthesis_threshold).float()
         
         # Weight update
