@@ -143,7 +143,11 @@ class AdvancedNeuroplasticityLayer(nn.Module):
         dendritic_output = self._dendritic_computation(x)
         
         # Synaptic transmission with astrocyte modulation
-        synaptic_output = F.linear(x, effective_weights * astro_modulation.unsqueeze(1), self.bias)
+        # astro_modulation is [batch_size, output_size], effective_weights is [output_size, input_size]
+        # Apply mean astrocyte modulation across batch for weight modulation
+        mean_astro_mod = astro_modulation.mean(dim=0)  # [output_size]
+        modulated_weights = effective_weights * mean_astro_mod.unsqueeze(-1)  # [output_size, input_size]
+        synaptic_output = F.linear(x, modulated_weights, self.bias)
         
         # Combine somatic and dendritic contributions
         combined_output = synaptic_output + dendritic_output
@@ -159,15 +163,18 @@ class AdvancedNeuroplasticityLayer(nn.Module):
     
     def _compute_astrocyte_modulation(self, context: torch.Tensor) -> torch.Tensor:
         """Compute astrocyte-mediated synaptic modulation."""
-        # Context-dependent astrocyte activation
         if context.dim() == 1:
             context = context.unsqueeze(0)
             
         # Simple context integration (can be made more sophisticated)
-        context_signal = context.mean(dim=1, keepdim=True)  # [batch_size, 1]
+        context_signal = context.mean(dim=-1, keepdim=True)  # [batch_size, 1]
+        
+        # Expand to match output dimensions
+        batch_size = context_signal.shape[0]
+        context_expanded = context_signal.expand(batch_size, self.output_size)  # [batch_size, output_size]
         
         # Astrocyte activation based on context and current state
-        activation_input = context_signal * self.astrocyte_activation.unsqueeze(0)  # Broadcasting
+        activation_input = context_expanded * self.astrocyte_activation.unsqueeze(0)  # Broadcasting
         astro_mod = torch.sigmoid(activation_input)
         
         # Apply threshold for astrocyte activation
