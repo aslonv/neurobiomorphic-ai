@@ -25,12 +25,12 @@ logger = logging.getLogger(__name__)
 @dataclass
 class UncertaintyEstimate:
     """Container for uncertainty estimates with different types."""
-    prediction: torch.Tensor  # Mean prediction
-    epistemic_uncertainty: torch.Tensor  # Model uncertainty (reducible)
-    aleatoric_uncertainty: torch.Tensor  # Data uncertainty (irreducible)
-    total_uncertainty: torch.Tensor  # Combined uncertainty
+    prediction: torch.Tensor
+    epistemic_uncertainty: torch.Tensor
+    aleatoric_uncertainty: torch.Tensor
+    total_uncertainty: torch.Tensor
     confidence_interval: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
-    prediction_sets: Optional[List[torch.Tensor]] = None  # For conformal prediction
+    prediction_sets: Optional[List[torch.Tensor]] = None
 
 
 class UncertaintyQuantificationBase(nn.Module, ABC):
@@ -62,15 +62,12 @@ class BayesianLinearLayer(nn.Module):
         self.out_features = out_features
         self.prior_std = prior_std
         
-        # Weight parameters (variational)
         self.weight_mu = nn.Parameter(torch.randn(out_features, in_features) * 0.1)
         self.weight_rho = nn.Parameter(torch.ones(out_features, in_features) * posterior_rho_init)
         
-        # Bias parameters (variational)
         self.bias_mu = nn.Parameter(torch.zeros(out_features))
         self.bias_rho = nn.Parameter(torch.ones(out_features) * posterior_rho_init)
         
-        # Prior parameters (fixed)
         self.register_buffer('prior_weight_mu', torch.zeros(out_features, in_features))
         self.register_buffer('prior_weight_std', torch.ones(out_features, in_features) * prior_std)
         self.register_buffer('prior_bias_mu', torch.zeros(out_features))
@@ -78,11 +75,9 @@ class BayesianLinearLayer(nn.Module):
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass with reparameterization trick."""
-        # Convert rho to standard deviation
         weight_std = torch.log(1 + torch.exp(self.weight_rho))
         bias_std = torch.log(1 + torch.exp(self.bias_rho))
         
-        # Sample weights and biases
         if self.training:
             weight_eps = torch.randn_like(self.weight_mu)
             bias_eps = torch.randn_like(self.bias_mu)
@@ -90,7 +85,6 @@ class BayesianLinearLayer(nn.Module):
             weight = self.weight_mu + weight_std * weight_eps
             bias = self.bias_mu + bias_std * bias_eps
         else:
-            # Use mean during inference
             weight = self.weight_mu
             bias = self.bias_mu
         
@@ -98,14 +92,12 @@ class BayesianLinearLayer(nn.Module):
     
     def kl_divergence(self) -> torch.Tensor:
         """Compute KL divergence between posterior and prior."""
-        # Weight KL divergence
         weight_std = torch.log(1 + torch.exp(self.weight_rho))
         weight_kl = self._gaussian_kl(
             self.weight_mu, weight_std, 
             self.prior_weight_mu, self.prior_weight_std
         )
         
-        # Bias KL divergence
         bias_std = torch.log(1 + torch.exp(self.bias_rho))
         bias_kl = self._gaussian_kl(
             self.bias_mu, bias_std,
@@ -154,7 +146,6 @@ class BayesianNeuralNetwork(UncertaintyQuantificationBase):
         self.output_dim = output_dim
         self.kl_weight = kl_weight
         
-        # Build Bayesian layers
         layers = []
         prev_dim = input_dim
         
@@ -163,13 +154,11 @@ class BayesianNeuralNetwork(UncertaintyQuantificationBase):
             layers.append(nn.ReLU())
             prev_dim = hidden_dim
         
-        # Output layer
         layers.append(BayesianLinearLayer(prev_dim, output_dim, prior_std))
         
         self.layers = nn.ModuleList([layer for layer in layers if isinstance(layer, BayesianLinearLayer)])
         self.activations = nn.ModuleList([layer for layer in layers if not isinstance(layer, BayesianLinearLayer)])
         
-        # For aleatoric uncertainty modeling
         self.log_var_head = nn.Linear(prev_dim, output_dim)
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -184,7 +173,6 @@ class BayesianNeuralNetwork(UncertaintyQuantificationBase):
                 activation_idx += 1
             layer_idx += 1
         
-        # Final layer (no activation)
         x = self.layers[-1](x)
         return x
     
@@ -193,19 +181,16 @@ class BayesianNeuralNetwork(UncertaintyQuantificationBase):
         batch_size = x.shape[0]
         device = x.device
         
-        # Collect predictions from multiple forward passes
         predictions = []
         for _ in range(n_samples):
             pred = self.forward(x)
             predictions.append(pred)
         
-        predictions = torch.stack(predictions, dim=0)  # [n_samples, batch_size, output_dim]
+        predictions = torch.stack(predictions, dim=0)
         
-        # Compute statistics
         mean_pred = predictions.mean(dim=0)
         epistemic_uncertainty = predictions.var(dim=0)
         
-        # Aleatoric uncertainty (from learned variance)
         with torch.no_grad():
             features = self._extract_features(x)
             log_var = self.log_var_head(features)
@@ -213,7 +198,6 @@ class BayesianNeuralNetwork(UncertaintyQuantificationBase):
         
         total_uncertainty = epistemic_uncertainty + aleatoric_uncertainty
         
-        # Confidence intervals (95%)
         std_total = torch.sqrt(total_uncertainty)
         lower_ci = mean_pred - 1.96 * std_total
         upper_ci = mean_pred + 1.96 * std_total
@@ -747,15 +731,12 @@ class UncertaintyAggregator:
         """Simple ensemble averaging of estimates."""
         n_methods = len(estimates)
         
-        # Average predictions
         mean_pred = torch.stack([est.prediction for est in estimates]).mean(dim=0)
         
-        # Average uncertainties
         epistemic = torch.stack([est.epistemic_uncertainty for est in estimates]).mean(dim=0)
         aleatoric = torch.stack([est.aleatoric_uncertainty for est in estimates]).mean(dim=0)
         total = torch.stack([est.total_uncertainty for est in estimates]).mean(dim=0)
         
-        # Confidence intervals (use widest intervals)
         lower_bounds = torch.stack([est.confidence_interval[0] for est in estimates if est.confidence_interval])
         upper_bounds = torch.stack([est.confidence_interval[1] for est in estimates if est.confidence_interval])
         
@@ -778,10 +759,8 @@ class UncertaintyAggregator:
         """Weighted aggregation based on method weights."""
         weights = F.softmax(self.method_weights, dim=0)
         
-        # Weighted predictions
         mean_pred = sum(w * est.prediction for w, est in zip(weights, estimates))
         
-        # Weighted uncertainties  
         epistemic = sum(w * est.epistemic_uncertainty for w, est in zip(weights, estimates))
         aleatoric = sum(w * est.aleatoric_uncertainty for w, est in zip(weights, estimates))
         total = sum(w * est.total_uncertainty for w, est in zip(weights, estimates))
@@ -813,8 +792,7 @@ class UncertaintyAggregator:
             
             if metric == "mse":
                 score = F.mse_loss(estimate.prediction, val_y)
-            elif metric == "nll":  # Negative log-likelihood
-                # Simplified NLL assuming Gaussian distribution
+            elif metric == "nll":
                 std = torch.sqrt(estimate.total_uncertainty)
                 nll = 0.5 * torch.log(2 * np.pi * std**2) + 0.5 * (estimate.prediction - val_y)**2 / std**2
                 score = nll.mean()
@@ -823,9 +801,7 @@ class UncertaintyAggregator:
             
             method_scores.append(score)
         
-        # Convert scores to weights (lower is better)
         scores_tensor = torch.stack(method_scores)
-        # Invert scores and normalize
         weights = 1.0 / (scores_tensor + 1e-8)
         self.method_weights = weights / weights.sum()
         
@@ -854,18 +830,16 @@ def uncertainty_based_active_learning(
     uncertainties = []
     
     with torch.no_grad():
-        for i in range(0, len(pool_x), 32):  # Process in batches
+        for i in range(0, len(pool_x), 32):
             batch = pool_x[i:i+32]
             estimate = model.forward_with_uncertainty(batch)
             
             if strategy == "uncertainty":
                 batch_uncertainty = estimate.total_uncertainty.sum(dim=1)
             elif strategy == "entropy":
-                # For classification tasks
                 probs = F.softmax(estimate.prediction, dim=1)
                 batch_uncertainty = -(probs * torch.log(probs + 1e-8)).sum(dim=1)
             elif strategy == "bald":
-                # Bayesian Active Learning by Disagreement
                 batch_uncertainty = estimate.epistemic_uncertainty.sum(dim=1)
             else:
                 raise ValueError(f"Unknown strategy: {strategy}")
@@ -874,7 +848,6 @@ def uncertainty_based_active_learning(
     
     all_uncertainties = torch.cat(uncertainties, dim=0)
     
-    # Select top-k most uncertain samples
     _, selected_indices = torch.topk(all_uncertainties, n_select)
     
     return selected_indices

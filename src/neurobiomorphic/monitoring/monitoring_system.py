@@ -72,28 +72,23 @@ class StructuredLogger:
         self.logger = logging.getLogger(name)
         self.logger.setLevel(level)
         
-        # Clear existing handlers
         self.logger.handlers.clear()
         
-        # Create formatters
         console_formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
         
         json_formatter = JsonFormatter()
         
-        # Console handler
         if enable_console:
             console_handler = logging.StreamHandler(sys.stdout)
             console_handler.setFormatter(console_formatter)
             console_handler.setLevel(level)
             self.logger.addHandler(console_handler)
         
-        # File handler with rotation
         if enable_file and log_file:
             from logging.handlers import RotatingFileHandler
             
-            # Ensure log directory exists
             log_path = Path(log_file)
             log_path.parent.mkdir(parents=True, exist_ok=True)
             
@@ -106,7 +101,6 @@ class StructuredLogger:
             file_handler.setLevel(level)
             self.logger.addHandler(file_handler)
         
-        # Context storage for structured logging
         self.context = {}
     
     def set_context(self, **kwargs):
@@ -119,10 +113,8 @@ class StructuredLogger:
     
     def _log_with_context(self, level: int, message: str, **kwargs):
         """Internal method to add context to log messages."""
-        # Merge persistent context with message-specific context
         full_context = {**self.context, **kwargs}
         
-        # Create extra dict for structured logging
         extra = {
             'context': full_context,
             'timestamp': datetime.utcnow().isoformat(),
