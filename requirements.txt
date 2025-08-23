@@ -1,0 +1,56 @@
+# Core ML/DL frameworks
+torch>=2.1.0,<3.0.0
+torch-audio>=2.1.0,<3.0.0
+torch-vision>=0.16.0,<1.0.0
+transformers>=4.35.0,<5.0.0
+tokenizers>=0.15.0,<1.0.0
+numpy>=1.24.0,<2.0.0
+scipy>=1.11.0,<2.0.0
+
+# Advanced ML libraries
+scikit-learn>=1.3.0,<2.0.0
+gym>=0.29.0,<1.0.0
+gymnasium>=0.29.0,<1.0.0
+stable-baselines3>=2.2.0,<3.0.0
+
+# Bayesian and probabilistic computing
+pyro-ppl>=1.8.6,<2.0.0
+pymc>=5.9.0,<6.0.0
+arviz>=0.16.0,<1.0.0
+
+# Symbolic computing and reasoning
+sympy>=1.12,<2.0.0
+networkx>=3.2.1,<4.0.0
+
+# Configuration and logging
+hydra-core>=1.3.0,<2.0.0
+omegaconf>=2.3.0,<3.0.0
+wandb>=0.16.0,<1.0.0
+tensorboard>=2.15.0,<3.0.0
+
+# Data processing and utilities
+pandas>=2.1.0,<3.0.0
+matplotlib>=3.8.0,<4.0.0
+seaborn>=0.13.0,<1.0.0
+tqdm>=4.66.0,<5.0.0
+psutil>=5.9.0,<6.0.0
+
+# Development and testing
+pytest>=7.4.0,<8.0.0
+pytest-cov>=4.1.0,<5.0.0
+black>=23.11.0,<24.0.0
+isort>=5.13.0,<6.0.0
+flake8>=6.1.0,<7.0.0
+mypy>=1.7.0,<2.0.0
+pre-commit>=3.6.0,<4.0.0
+
+# Serialization and I/O
+pickle-mixin>=1.0.2,<2.0.0
+joblib>=1.3.0,<2.0.0
+cloudpickle>=3.0.0,<4.0.0
+
+# Optimization and profiling
+optuna>=3.4.0,<4.0.0
+ray[tune]>=2.8.0,<3.0.0
+line_profiler>=4.1.0,<5.0.0
+memory_profiler>=0.61.0,<1.0.0
