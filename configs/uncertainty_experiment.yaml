@@ -1,0 +1,151 @@
+base:
+  name: uncertainty_experiment
+  version: 1.0.0
+  description: Uncertainty quantification experiment
+  seed: 42
+  device: auto
+  precision: float32
+  deterministic: true
+model:
+  architecture: ???
+  input_dim: ???
+  output_dim: ???
+  hidden_dims:
+  - 256
+  - 256
+  activation: relu
+  dropout_rate: 0.1
+  normalization: layer_norm
+  initialization: xavier
+reasoning:
+  causal_reasoning: {}
+  symbolic_neural_hybrid: {}
+  meta_learning: {}
+  uncertainty_quantification: {}
+causal_reasoning:
+  discovery_method: notears
+  max_parents: 5
+  mechanism_type: neural
+  use_bayesian: true
+  sparsity_penalty: 0.01
+  dag_penalty: 10.0
+  temperature: 1.0
+  n_samples: 100
+symbolic_neural:
+  vocab_size: 1000
+  embedding_dim: 256
+  hidden_dim: 512
+  max_expression_length: 64
+  n_transformer_layers: 3
+  n_attention_heads: 8
+  supported_operations:
+  - add
+  - multiply
+  - compose
+  - conditional
+  rule_memory_size: 100
+meta_learning:
+  method: maml
+  inner_lr: 0.01
+  outer_lr: 0.001
+  n_inner_steps: 5
+  n_support: 5
+  n_query: 15
+  n_tasks_per_batch: 8
+  first_order: false
+uncertainty:
+  methods:
+  - bayesian
+  - ensemble
+  - mc_dropout
+  n_samples: 100
+  n_ensemble_members: 5
+  bayesian_prior_std: 1.0
+  mc_dropout_rate: 0.1
+  evidential_activation: relu
+  conformal_alpha: 0.1
+  aggregation_strategy: ensemble
+neural_plasticity:
+  plasticity_type: advanced
+  consolidation_rate: 0.001
+  tag_decay: 0.99
+  protein_synthesis_threshold: 0.5
+  homeostatic_target: 0.1
+  astrocyte_modulation: true
+  dendritic_computation: true
+  stdp_learning_rate: 0.01
+  metaplasticity: true
+  synaptic_scaling: true
+reinforcement_learning:
+  algorithm: ppo
+  gamma: 0.99
+  learning_rate: 0.0003
+  batch_size: 64
+  buffer_size: 100000
+  exploration_noise: 0.1
+  policy_noise: 0.2
+  noise_clip: 0.5
+  policy_delay: 2
+  entropy_coefficient: 0.01
+training:
+  optimizer: adam
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  lr_scheduler: cosine
+  warmup_steps: 1000
+  max_epochs: 1000
+  early_stopping_patience: 50
+  gradient_clip_value: 1.0
+  accumulation_steps: 1
+  mixed_precision: false
+data:
+  dataset_name: ???
+  data_dir: data/
+  batch_size: 32
+  num_workers: 4
+  pin_memory: true
+  shuffle: true
+  validation_split: 0.1
+  test_split: 0.1
+  preprocessing: {}
+  augmentation: {}
+logging:
+  level: INFO
+  log_dir: logs/
+  tensorboard_dir: runs/
+  wandb_project: null
+  wandb_entity: null
+  log_every_n_steps: 100
+  save_every_n_epochs: 10
+  log_model_params: false
+  log_gradients: false
+experiment:
+  name: ???
+  description: ''
+  tags:
+  - uncertainty
+  - bayesian
+  - ensemble
+  output_dir: outputs/
+  checkpoint_dir: checkpoints/
+  resume_from_checkpoint: null
+  save_top_k: 3
+  monitor_metric: val_loss
+  monitor_mode: min
+hyperparameter:
+  method: optuna
+  n_trials: 100
+  timeout: null
+  pruning: true
+  objective_metric: val_loss
+  objective_direction: minimize
+  search_space: {}
+production:
+  model_registry: local
+  serving_framework: torchserve
+  batch_inference: false
+  max_batch_size: 32
+  timeout_seconds: 30
+  health_check_endpoint: /health
+  metrics_endpoint: /metrics
+  model_versioning: true

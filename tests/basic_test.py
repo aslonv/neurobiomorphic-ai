@@ -27,7 +27,7 @@ def test_basic_functionality():
         print("✓ Basic PyTorch operations work")
         
         # Test neural plasticity components (simplified)
-        from neural_plasticity.advanced_plasticity_layer import AdvancedNeuroplasticityLayer
+        from neurobiomorphic.neural_plasticity.advanced_plasticity_layer import AdvancedNeuroplasticityLayer
         
         layer = AdvancedNeuroplasticityLayer(
             input_size=5,
@@ -50,7 +50,7 @@ def test_basic_functionality():
         print(f"  - Output shape: {output.shape}")
         
         # Test monitoring components
-        from monitoring.monitoring_system import StructuredLogger, PerformanceProfiler
+        from neurobiomorphic.monitoring.monitoring_system import StructuredLogger, PerformanceProfiler
         
         logger = StructuredLogger("test")
         logger.info("Test message")
@@ -77,8 +77,8 @@ def test_system_integration():
     print("\n=== Testing Core Integration ===")
     
     try:
-        from neural_plasticity.advanced_plasticity_layer import AdvancedNeuroplasticityLayer
-        from monitoring.monitoring_system import PerformanceProfiler
+        from neurobiomorphic.neural_plasticity.advanced_plasticity_layer import AdvancedNeuroplasticityLayer
+        from neurobiomorphic.monitoring.monitoring_system import PerformanceProfiler
         
         # Create simple system
         profiler = PerformanceProfiler("integration")
@@ -124,7 +124,7 @@ def demonstrate_capabilities():
     print("\n=== Demonstrating Key Capabilities ===")
     
     try:
-        from neural_plasticity.advanced_plasticity_layer import AdvancedNeuroplasticityLayer
+        from neurobiomorphic.neural_plasticity.advanced_plasticity_layer import AdvancedNeuroplasticityLayer
         
         # Create advanced layer with all features
         layer = AdvancedNeuroplasticityLayer(

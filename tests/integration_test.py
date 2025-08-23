@@ -20,8 +20,8 @@ def test_neural_plasticity():
     print("\n=== Testing Neural Plasticity System ===")
     
     try:
-        from neural_plasticity.advanced_plasticity_layer import AdvancedNeuroplasticityLayer
-        from neural_plasticity.neuroplastic_network import AdvancedNeuroplasticNetwork
+        from neurobiomorphic.neural_plasticity.advanced_plasticity_layer import AdvancedNeuroplasticityLayer
+        from neurobiomorphic.neural_plasticity.neuroplastic_network import AdvancedNeuroplasticNetwork
         
         # Create plasticity layer
         layer = AdvancedNeuroplasticityLayer(
@@ -81,7 +81,7 @@ def test_causal_reasoning():
     print("\n=== Testing Causal Reasoning System ===")
     
     try:
-        from reasoning.causal_engine import CausalReasoningEngine, CausalGraph
+        from neurobiomorphic.reasoning.causal_engine import CausalReasoningEngine, CausalGraph
         
         # Define simple causal system
         variables = ["X", "Y", "Z"]
@@ -145,7 +145,7 @@ def test_meta_learning():
     print("\n=== Testing Meta-Learning System ===")
     
     try:
-        from reasoning.meta_learning import MetaReasoningSystem, TaskBatch
+        from neurobiomorphic.reasoning.meta_learning import MetaReasoningSystem, TaskBatch
         
         # Create meta-learning system
         meta_system = MetaReasoningSystem(
@@ -202,7 +202,7 @@ def test_uncertainty_quantification():
     print("\n=== Testing Uncertainty Quantification ===")
     
     try:
-        from reasoning.uncertainty_quantification import (
+        from neurobiomorphic.reasoning.uncertainty_quantification import (
             BayesianNeuralNetwork,
             MCDropoutNetwork,
             UncertaintyAggregator
@@ -260,7 +260,7 @@ def test_monitoring_system():
     print("\n=== Testing Monitoring System ===")
     
     try:
-        from monitoring.monitoring_system import (
+        from neurobiomorphic.monitoring.monitoring_system import (
             StructuredLogger,
             SystemMonitor,
             PerformanceProfiler,
@@ -320,7 +320,7 @@ def test_configuration_system():
     print("\n=== Testing Configuration System ===")
     
     try:
-        from config.config_system import ConfigManager, FullConfig
+        from neurobiomorphic.config.config_system import ConfigManager, FullConfig
         
         # Create config manager
         config_manager = ConfigManager("/tmp/test_configs")
@@ -358,9 +358,9 @@ def test_integration():
     print("\n=== Testing System Integration ===")
     
     try:
-        from neural_plasticity.neuroplastic_network import AdvancedNeuroplasticNetwork
-        from reasoning.uncertainty_quantification import BayesianNeuralNetwork
-        from monitoring.monitoring_system import PerformanceProfiler
+        from neurobiomorphic.neural_plasticity.neuroplastic_network import AdvancedNeuroplasticNetwork
+        from neurobiomorphic.reasoning.uncertainty_quantification import BayesianNeuralNetwork
+        from neurobiomorphic.monitoring.monitoring_system import PerformanceProfiler
         
         # Create integrated system
         profiler = PerformanceProfiler("integration_test")
